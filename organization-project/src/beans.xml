@@ -1,0 +1,59 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+    	http://www.springframework.org/schema/context/spring-context.xsd">
+	 <context:property-placeholder location="classpath:dbConfig.properties" />
+	
+
+<bean id = "orgBeans" class = "com.capgemini.spring.org.Organization">
+        <constructor-arg value = "1001" type="int"/>
+        <constructor-arg value = "AMD" type="String"/>
+        <constructor-arg value = "250000" type="double"/>
+
+	<constructor-arg>
+			<list>
+				<value>"AMD"</value>
+				<value>"Jane"</value>				
+			</list>
+	</constructor-arg>
+ 	<constructor-arg >
+			<set>
+				<value>"HR"</value>
+				<value>"Management"</value>
+			</set>
+	</constructor-arg>
+	
+
+	<constructor-arg >
+			<map>
+            			<entry key = "HR" value = "AMD"/>
+            			<entry key = "Admin" value = "Jane"/>
+         		</map>
+	</constructor-arg>
+	<constructor-arg >
+			<props>
+            			<prop key = "admin">192.168.1.1</prop>
+            			<prop key = "hr">192.168.1.2</prop>
+         		</props>
+	</constructor-arg>
+	<constructor-arg ref="Address">
+			
+	</constructor-arg>
+	<constructor-arg >
+			<props>
+            			<prop key = "dbUser">${dbConfig.user}</prop>
+            			<prop key = "dbPassword">${dbConfig.password}</prop>
+         		</props>
+	</constructor-arg>
+
+    </bean>
+
+	<bean id="Address" class="com.capgemini.spring.org.Address">
+		<property name="state" value="Maharashtra" />
+		<property name="country" value="India" />
+	</bean>
+
+</beans>
