@@ -1,0 +1,44 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+    xmlns:context ="http://www.springframework.org/schema/context"
+	 xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/util
+	 http://www.springframework.org/schema/util/spring-util.xsd">
+	 <context:property-placeholder location="classpath:dbConfig.properties" />
+
+ <context:component-scan base-package="com" />
+	
+	<util:list id="list" list-class="java.util.ArrayList">
+ 		<value>Akshay</value>
+		<value>Donode</value>
+ 		
+	</util:list>
+
+	<util:set id="set" set-class="java.util.HashSet">
+ 		<value>Mumbai</value>
+		<value>Pune</value>
+ 		
+	 </util:set>
+
+	 <util:map id="map" map-class="java.util.HashMap">
+		 <entry key="management" value="RAM"/>
+ 		 <entry key="hr" value="Ruchir"/>
+ 	 </util:map>
+
+	<util:properties id="props">
+		<prop key="ipAddress1">182.11.11.1</prop>
+		 <prop key="ipAddress2">182.11.11.2</prop>
+	 </util:properties>
+
+	<util:properties id="props1">
+			<prop key = "dbUser">${dbConfig.user}</prop>
+            		<prop key = "dbPassword">${dbConfig.password}</prop>
+	 </util:properties>
+
+</beans>
