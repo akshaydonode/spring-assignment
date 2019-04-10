@@ -10,7 +10,7 @@ public class Test{
 	public static void main(String a[]){
 	
 		ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
-		Organization organization =(Organization) context.getBean("organization");
+		Organization organization = context.getBean(Organization.class);
 		System.out.println("welcome");
 		System.out.println(organization);
 	}
