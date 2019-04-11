@@ -12,7 +12,9 @@ import com.capgemini.bankapp.model.BankAccount;
 import com.capgemini.bankapp.service.BankAccountService;
 import com.capgemini.bankapp.util.DbUtil;
 import com.mysql.jdbc.Connection;
+import org.springframework.transaction.annotation.*;
 
+@Transactional
 public class BankAccountServiceImpl implements BankAccountService {
 
 
@@ -42,7 +44,7 @@ public class BankAccountServiceImpl implements BankAccountService {
 		else if (balance - amount >= 0) {
 			balance = balance - amount;
 			bankAccountDao.updateBalance(accountId, balance);
-			DbUtil.commit();
+			
 		} else
 			throw new LowBalanceException("You have insufficient fund...");
 		return balance;
@@ -67,7 +69,7 @@ public class BankAccountServiceImpl implements BankAccountService {
 			throw new AccountNotFoundException("Account doesn't exist");
 		balance = balance + amount;
 		bankAccountDao.updateBalance(accountId, balance);
-		DbUtil.commit();
+
 		return balance;
 	}
 
@@ -75,7 +77,7 @@ public class BankAccountServiceImpl implements BankAccountService {
 	public boolean deleteBankAccount(long accountId) throws AccountNotFoundException {
 		boolean result = bankAccountDao.deleteBankAccount(accountId);
 		if (result) {
-			DbUtil.commit();
+		
 			return true;
 		}
 		throw new AccountNotFoundException("Account doesn't exist");
@@ -83,17 +85,18 @@ public class BankAccountServiceImpl implements BankAccountService {
 	}
 
 	@Override
+	@Transactional(rollbackFor=AccountNotFoundException.class)
 	public double fundTransfer(long fromAccount, long toAccount, double amount)
 			throws LowBalanceException, AccountNotFoundException {
 		double newBalance = 0;
 		try {
 			newBalance = withdrawForFundTransfer(fromAccount, amount);
 			deposit(toAccount, amount);
-			DbUtil.commit();
+			
 			return newBalance;
 		} catch (LowBalanceException | AccountNotFoundException e) {
 			logger.error("Exception: ", e);
-			DbUtil.rollback();
+			
 			throw e;
 		}
 	}
@@ -104,7 +107,7 @@ public class BankAccountServiceImpl implements BankAccountService {
 	public boolean addNewBankAccount(BankAccount account) {
 		boolean result = bankAccountDao.addNewBankAccount(account);
 		if(result)
-			DbUtil.commit();
+		
 		return result;
 	}
 
@@ -122,9 +125,9 @@ public class BankAccountServiceImpl implements BankAccountService {
 	}
 
 	@Override
-	public boolean updateAccountDetails(BankAccount account) {
+	public boolean updateAccountDetails(BankAccount account) throws AccountNotFoundException{
 		boolean result = bankAccountDao.updateAccountDetails(account);
-		DbUtil.commit();
+	
 		return result;
 	}
 

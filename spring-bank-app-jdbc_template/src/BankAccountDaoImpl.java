@@ -14,160 +14,118 @@ import com.capgemini.bankapp.model.BankAccount;
 import com.capgemini.bankapp.util.DbUtil;
 import java.sql.PreparedStatement;
 import javax.sql.DataSource;
+import org.springframework.transaction.annotation.*;
 
+@Transactional
 public class BankAccountDaoImpl implements BankAccountDao {
 
 	Logger logger = Logger.getLogger(BankAccountDaoImpl.class);
-	private DataSource dataSource;
+	
 	private JdbcTemplate jdbcTemplate;
-	public BankAccountDaoImpl(DataSource dataSource) {
-		 this.dataSource = dataSource;
-		  jdbcTemplate = new JdbcTemplate(dataSource);
-		 //jdbcTemplate.setDataSource(dataSource);
+
+	public BankAccountDaoImpl(JdbcTemplate jdbcTemplate) {
+		 this.jdbcTemplate = jdbcTemplate;
+		  
 	 }
 	@Override
-	public double getBalance(long accountId) {
+	public double getBalance(long accountId) throws AccountNotFoundException {
 		String query = "SELECT account_balance FROM bankaccounts WHERE account_id = " + accountId;
-		double balance = -1;
-		//Connection connection = dataSource.getConnection();
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query);
-				ResultSet result = statement.executeQuery()) {
-			
-			if(result.next())
-				balance = result.getDouble(1);
-		} catch (SQLException e) {
-			logger.error("Exception: ", e);
+		Double balance = -1.0;
+		try{
+		 balance = jdbcTemplate.queryForObject(query,Double.class);
+		}
+		catch(Exception e){
+			throw new AccountNotFoundException("account doesn't exist");
 		}
 		return balance;
 	}
 
 	@Override
-	public void updateBalance(long accountId, double newBalance) {
-		String query = "UPDATE bankaccounts SET account_balance = ? WHERE account_id = ?";
-		//Connection connection = DbUtil.getConnection();
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query)) {
-
-			statement.setDouble(1, newBalance);
-			statement.setLong(2, accountId);
-			int result = statement.executeUpdate();
-			System.out.println("No. of rows updated: " + result);
-		} catch (SQLException e) {
-			logger.error("Exception: ", e);
+	public void updateBalance(long accountId, double newBalance) throws AccountNotFoundException{
+		String query = "UPDATE bankaccounts SET account_balance = "+newBalance+" WHERE account_id = "+accountId;
+		try{
+		 jdbcTemplate.update(query);
 		}
-
+		catch(Exception e){
+			throw new AccountNotFoundException("account doesn't exist");
+		}
+	
 	}
 
 	@Override
-	public boolean deleteBankAccount(long accountId) {
+	public boolean deleteBankAccount(long accountId) throws AccountNotFoundException{
 		String query = "DELETE FROM bankaccounts WHERE account_id = " + accountId;
-		//Connection connection = DbUtil.getConnection();
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query);) {
-			int result = statement.executeUpdate();
-			if (result == 1)
-				return true;
-		} catch (SQLException e) {
-			logger.error("Exception: ", e);
+		try{
+		int result = jdbcTemplate.update(query);
+			if(result==1){
+				return true;		
+			}
 		}
+		catch(Exception e){
+			throw new AccountNotFoundException("account doesn't exist");
+		}
+
 		return false;
 	}
 
 	@Override
 	public boolean addNewBankAccount(BankAccount account) {
 		String query = "INSERT INTO bankaccounts (customer_name, account_type, account_balance) VALUES (?, ?, ?)";
-		//Connection connection = DbUtil.getConnection();
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query);) {
-
-			statement.setString(1, account.getAccountHolderName());
-			statement.setString(2, account.getAccountType());
-			statement.setDouble(3, account.getAccountBalance());
-
-			int result = statement.executeUpdate();
-
-			if (result == 1)
-				return true;
-		} catch (SQLException e) {
-			logger.error("Exception: ", e);
-		}
+		Object[] params={account.getAccountHolderName(),account.getAccountType(),account.getAccountBalance()};
+		
+		int result = jdbcTemplate.update(query,params);
+			if(result==1){
+				return true;		
+			}
+		
 		return false;
 	}
 
 	@Override
 	public List<BankAccount> findAllBankAccounts() {
 		String query = "SELECT * FROM bankaccounts";
-		List<BankAccount> accounts = new ArrayList<>();
-		//Connection connection = DbUtil.getConnection();
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query);
-				ResultSet result = statement.executeQuery()) {
-
-			while (result.next()) {
-				long accountId = result.getLong(1);
-				String accountHolderName = result.getString(2);
-				String accountType = result.getString(3);
-				double accountBalance = result.getDouble(4);
-
-				BankAccount account = new BankAccount(accountId, accountHolderName, accountType, accountBalance);
-
-				accounts.add(account);
-			}
-
-		} catch (SQLException e) {
-			logger.error("Exception: ", e);
-		}
+		List<BankAccount> accounts = jdbcTemplate.query(query,(result,rowNum)->{
+			BankAccount account = new BankAccount(result.getLong(1),result.getString(2),
+			 result.getString(3),result.getDouble(4));
+				
+			return account;
+			});
+	
 		return accounts;
 	}
 
 	@Override
-	public BankAccount searchAccount(long accountId) {
+	public BankAccount searchAccount(long accountId) throws AccountNotFoundException{
 		String query = "SELECT * FROM bankaccounts WHERE account_id = " + accountId;
 		BankAccount account = null;
-		//Connection connection = DbUtil.getConnection();
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query);
-				ResultSet result = statement.executeQuery()) {
-
-			if (result.next())
-			{
-				String accountHolderName = result.getString(2);
-				String accountType = result.getString(3);
-				double accountBalance = result.getDouble(4);
-
-				account = new BankAccount(accountId, accountHolderName, accountType, accountBalance);
-			}
-
-		} catch (SQLException e) {
-			logger.error("Exception: ", e);
+		try{
+		 account = jdbcTemplate.queryForObject(query,(result,rowNum)->{
+			BankAccount accounts = new BankAccount(result.getLong(1),result.getString(2),
+			 result.getString(3),result.getDouble(4));
+			return accounts;
+			});
 		}
-		return account;
+		catch(Exception e){
+			throw new AccountNotFoundException("account doesn't exist");
+		}
+	return account;
 	}
 
 	@Override
-	public boolean updateAccountDetails(BankAccount account) {
+	public boolean updateAccountDetails(BankAccount account) throws AccountNotFoundException{
 		String query = "UPDATE bankaccounts SET customer_name = ?, account_type = ? WHERE account_id = ?";
-		//Connection connection = DbUtil.getConnection();
-		try (Connection connection = dataSource.getConnection();
-			PreparedStatement statement = connection.prepareStatement(query)) {
-			
-			statement.setString(1, account.getAccountHolderName());
-			statement.setString(2, account.getAccountType());
-			statement.setLong(3, account.getAccountId());
-			int result = statement.executeUpdate();
-			System.out.println(result);
-			if(result==1)
-			{
-				System.out.println("No. of rows updated: " + result);
-				return true;
+		Object[] params = {account.getAccountHolderName(),account.getAccountType(),account.getAccountId()};
+		try{
+		int result = jdbcTemplate.update(query,params);
+			if(result==1){
+				return true;		
 			}
-		} catch (SQLException e) {
-			logger.error("Exception: ", e);
+		}
+		catch(Exception e){
+			throw new AccountNotFoundException("account doesn't exist");
 		}
 		return false;
 	}
-
 	
-
+	
 }
